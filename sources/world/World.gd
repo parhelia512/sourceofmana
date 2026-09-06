@@ -19,6 +19,15 @@ func GetGlobalPlayer(nickname : String) -> PlayerAgent:
 					return player
 	return null
 
+func GetGlobalNpc(nickname : String) -> NpcAgent:
+	for areaIdx in areas:
+		var area = areas[areaIdx]
+		for inst in area.instances.values():
+			for npc in inst.npcs:
+				if npc.nick == nickname:
+					return npc
+	return null
+
 # Helper
 func BulkPreload(agent : BaseAgent, agentRID : int, peerID : int):
 	if agent is PlayerAgent:

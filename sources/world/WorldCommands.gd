@@ -9,6 +9,7 @@ func RegisterCommands():
 	CommandManager.Register("goto", CommandGoto, ActorCommons.Permission.MODERATOR, "goto <player>" )
 	CommandManager.Register("recall", CommandRecall, ActorCommons.Permission.MODERATOR, "recall <player>" )
 	CommandManager.Register("recallnpc", CommandRecallNpc, ActorCommons.Permission.ADMIN, "recallnpc <npc_name>" )
+	CommandManager.Register("disablenpc", CommandDisableNpc, ActorCommons.Permission.ADMIN, "disablenpc <npc_name>" )
 	CommandManager.Register("godmode", CommandGodmode, ActorCommons.Permission.MODERATOR, "godmode <on/off>" )
 	CommandManager.Register("hide", CommandHide, ActorCommons.Permission.MODERATOR, "hide <on/off>" )
 	CommandManager.Register("invisible", CommandInvisible, ActorCommons.Permission.GM, "invisible <on/off>" )
@@ -51,6 +52,7 @@ static func UnregisterCommands():
 	CommandManager.Unregister("goto")
 	CommandManager.Unregister("recall")
 	CommandManager.Unregister("recallnpc")
+	CommandManager.Unregister("disablenpc")
 	CommandManager.Unregister("godmode")
 	CommandManager.Unregister("hide")
 	CommandManager.Unregister("invisible")
@@ -131,20 +133,34 @@ func CommandJump(caller : PlayerAgent) -> bool:
 
 	return CommandWarp(caller, map.name)
 
-# Warp the current player to a specific map
+# Warp the current player to a specific player or NPC
 func CommandGoto(caller : PlayerAgent, nickname : String) -> bool:
 	if not caller:
 		return false
 
-	var target : PlayerAgent = Launcher.World.GetGlobalPlayer(nickname)
-	if not target:
-		Network.CommandFeedback("Player '%s' is disconnected" % nickname, caller.peerID)
-		return false
+	var target : BaseAgent = Launcher.World.GetGlobalPlayer(nickname)
+	if target:
+		var targetInst : WorldInstance = WorldAgent.GetInstanceFromAgent(target)
+		if targetInst:
+			Launcher.World.Warp(caller, targetInst.map, target.position, ActorCommons.Direction.UNKNOWN, targetInst.id)
+		return true
 
-	var targetInst : WorldInstance = WorldAgent.GetInstanceFromAgent(target)
-	if targetInst:
-		Launcher.World.Warp(caller, targetInst.map, target.position, ActorCommons.Direction.UNKNOWN, targetInst.id)
-	return true
+	var inst : WorldInstance = WorldAgent.GetInstanceFromAgent(caller)
+	if inst:
+		for npc in inst.npcs:
+			if npc and npc.nick == nickname:
+				Launcher.World.Warp(caller, inst.map, npc.position, ActorCommons.Direction.UNKNOWN, inst.id)
+				return true
+
+	target = Launcher.World.GetGlobalNpc(nickname)
+	if target:
+		var targetInst : WorldInstance = WorldAgent.GetInstanceFromAgent(target)
+		if targetInst:
+			Launcher.World.Warp(caller, targetInst.map, target.position, ActorCommons.Direction.UNKNOWN, targetInst.id)
+		return true
+
+	Network.CommandFeedback("Player or NPC '%s' not found" % nickname, caller.peerID)
+	return false
 
 # Recall a player to the caller's position
 func CommandRecall(caller : PlayerAgent, nickname : String) -> bool:
@@ -173,6 +189,24 @@ func CommandRecallNpc(caller : PlayerAgent, npcName : String) -> bool:
 	for npc in inst.npcs:
 		if npc and npc.nick == npcName:
 			RecallAgent(npc, caller.position)
+			return true
+
+	Network.CommandFeedback("NPC '%s' not found in current instance" % npcName, caller.peerID)
+	return false
+
+# Disable an NPC in the current instance
+func CommandDisableNpc(caller : PlayerAgent, npcName : String) -> bool:
+	if not caller:
+		return false
+
+	var inst : WorldInstance = WorldAgent.GetInstanceFromAgent(caller)
+	if not inst:
+		return false
+
+	for npc in inst.npcs:
+		if npc and npc.nick == npcName:
+			npc.spawnInfo = null
+			WorldAgent.RemoveAgent(npc)
 			return true
 
 	Network.CommandFeedback("NPC '%s' not found in current instance" % npcName, caller.peerID)

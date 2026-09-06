@@ -1,5 +1,7 @@
 extends AudioStreamPlayer
 
+const DefaultTrack : String				= "LaJohanne"
+
 var currentTrack : int					= DB.UnknownHash
 var soundStream : AudioStreamOggVorbis	= null
 
@@ -43,10 +45,14 @@ func Warped():
 	else:
 		Stop()
 
+func PlayDefault():
+	if DB.isInitialized and currentTrack == DB.UnknownHash:
+		Load(DefaultTrack.hash())
+
 #
 func _post_launch():
-	if not FSM.exit_game.is_connected(Stop):
-		FSM.exit_game.connect(Stop)
+	if not Launcher.dbInitialized.is_connected(PlayDefault):
+		Launcher.dbInitialized.connect(PlayDefault)
 	if Launcher.Map and not Launcher.Map.PlayerWarped.is_connected(Warped):
 		Launcher.Map.PlayerWarped.connect(Warped)
 		Warped()

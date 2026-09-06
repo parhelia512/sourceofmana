@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://uiwxfl4dyoyw"]
 
 [ext_resource type="Theme" uid="uid://dhb6h35g1bk0x" path="res://data/themes/DefaultTheme.tres" id="1_1ynyk"]
+[ext_resource type="Script" uid="uid://b1ldargnnlykv" path="res://sources/gui/labels/ChatLabel.gd" id="2_chatlabel"]
 
 [node name="Tab" type="RichTextLabel" unique_id=1410534613]
 anchors_preset = 15
@@ -19,5 +20,11 @@ theme = ExtResource("1_1ynyk")
 bbcode_enabled = true
 scroll_following = true
 autowrap_mode = 2
-context_menu_enabled = true
 threaded = true
+script = ExtResource("2_chatlabel")
+
+[node name="ContextMenu" type="PopupMenu" parent="." unique_id=2088607992]
+theme = ExtResource("1_1ynyk")
+item_count = 1
+item_0/text = "Clear"
+item_0/id = 0

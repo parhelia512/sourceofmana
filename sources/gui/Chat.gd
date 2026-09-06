@@ -105,7 +105,13 @@ func OnNewTextSubmitted(newText : String):
 			if Launcher.Player:
 				backlog.Add(newText)
 				if newText[0] == "/":
-					Network.TriggerCommand(newText.trim_prefix("/"))
+					var command : String = newText.trim_prefix("/")
+					var commandStripped : String = command.strip_edges().to_lower()
+					match commandStripped:
+						"clear":
+							ClearCurrentTab()
+						_:
+							Network.TriggerCommand(command)
 				else:
 					var channelIdx : int = tabContainer.get_current_tab()
 					var channelName : String = ""
@@ -115,6 +121,12 @@ func OnNewTextSubmitted(newText : String):
 						channelName = GetChannelName(channelIdx)
 					Network.TriggerChat(channelName, newText)
 		SetNewLineEnabled(false)
+
+#
+func ClearCurrentTab():
+	var tab : Control = tabContainer.get_tab_control(tabContainer.get_current_tab())
+	if tab and tab is RichTextLabel:
+		tab.text = ""
 
 #
 func OnTabCloseRequested(channelIdx : int):
